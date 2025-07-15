@@ -1,0 +1,24 @@
+# Source files
+src/
+example.ts
+
+# Build configs
+tsconfig*.json
+.eslintrc.js
+
+# Development files
+.git
+.gitignore
+node_modules/
+*.log
+.DS_Store
+
+# Test files
+**/*.test.ts
+**/*.spec.ts
+coverage/
+jest.config.js
+
+# Development tools
+.vscode/
+.idea/
