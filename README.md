@@ -9,19 +9,20 @@ A lightweight TypeScript API client using fetch with an axios-like interface. Pe
 - 🔄 **Interceptors**: Request and response interceptors like axios
 - ⚡ **Modern**: ESM and CommonJS support, tree-shakable
 - 🛡️ **Robust**: Built-in error handling, timeout support, and request cancellation
-- 🎯 **Flexible**: Supports all HTTP methods and content types
+- 🔁 **Retry**: Configurable automatic retry with custom delay and predicate
+- 🎯 **Flexible**: Supports all HTTP methods, content types, and array query params
 - 🌐 **Universal**: Works in browsers, Node.js, and edge environments
 
 ## Installation
 
 ```bash
-npm install @hoangdanh2000/fetch-api-client
+npm install fetch-api-client
 ```
 
 ## Quick Start
 
 ```typescript
-import { createClient, defaultClient } from '@hoangdanh2000/fetch-api-client';
+import { createClient, defaultClient, FetchApiError } from 'fetch-api-client';
 
 // Use default client
 const response = await defaultClient.get<User>('/users/1');
@@ -56,12 +57,52 @@ const users = await api.get<User[]>('/users');
 ```typescript
 interface ClientConfig {
   baseURL?: string;
-  timeout?: number;
+  timeout?: number;                                   // default: 30000
   headers?: Record<string, string>;
   getToken?: () => string | null | Promise<string | null>;
   withCredentials?: boolean;
-  validateStatus?: (status: number) => boolean;
+  validateStatus?: (status: number) => boolean;       // default: 200-299
+  retries?: number;                                   // default: 0
+  retryDelay?: number | ((attempt: number) => number);// default: 0
+  retryOn?: (error: FetchApiError) => boolean;        // default: NETWORK_ERROR | TIMEOUT
 }
+```
+
+### Error Handling
+
+Errors thrown are instances of `FetchApiError` (extends `Error`) with the following codes:
+
+| Code | Meaning |
+|------|---------|
+| `HTTP_<status>` | HTTP error response (e.g. `HTTP_404`, `HTTP_500`) |
+| `NETWORK_ERROR` | Network-level failure (no response received) |
+| `TIMEOUT` | Request exceeded the configured timeout |
+| `ABORTED` | Request was cancelled via `AbortSignal` |
+| `UNKNOWN_ERROR` | Unexpected error |
+
+```typescript
+try {
+  const response = await api.get('/data');
+} catch (error) {
+  if (error instanceof FetchApiError) {
+    switch (error.code) {
+      case 'TIMEOUT':      console.log('Request timed out'); break;
+      case 'NETWORK_ERROR': console.log('No network'); break;
+      case 'HTTP_401':     console.log('Unauthorized'); break;
+    }
+  }
+}
+```
+
+### Retry
+
+```typescript
+const api = createClient({
+  baseURL: 'https://api.example.com',
+  retries: 3,
+  retryDelay: (attempt) => attempt * 500, // 500ms, 1000ms, 1500ms
+  retryOn: (error) => error.code === 'NETWORK_ERROR' || error.code === 'TIMEOUT',
+});
 ```
 
 ### Interceptors
@@ -69,7 +110,7 @@ interface ClientConfig {
 ```typescript
 // Request interceptor
 api.interceptors.request.use((config) => {
-  config.headers['X-Timestamp'] = new Date().toISOString();
+  config.headers = { ...config.headers, 'X-Timestamp': new Date().toISOString() };
   return config;
 });
 
@@ -85,6 +126,30 @@ api.interceptors.response.use({
     }
     return error;
   }
+});
+```
+
+### Query Parameters (with array support)
+
+```typescript
+// Scalar params: /users?page=1&limit=10
+api.get('/users', { params: { page: 1, limit: 10 } });
+
+// Array params: /search?tags=a&tags=b&tags=c
+api.get('/search', { params: { tags: ['a', 'b', 'c'] } });
+```
+
+### Timeout and AbortSignal
+
+Both a per-request `timeout` and an external `signal` can be used simultaneously — the request aborts on whichever fires first.
+
+```typescript
+const controller = new AbortController();
+setTimeout(() => controller.abort(), 5000);
+
+const response = await api.get('/slow-endpoint', {
+  timeout: 3000,          // fires at 3s
+  signal: controller.signal, // fires at 5s
 });
 ```
 

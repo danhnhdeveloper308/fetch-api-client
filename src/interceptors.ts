@@ -1,4 +1,4 @@
-import { InterceptorManager, RequestInterceptor, ResponseInterceptor } from './types';
+import { FetchApiError, InterceptorManager, RequestInterceptor, ResponseInterceptor } from './types';
 
 /**
  * Generic interceptor manager implementation
@@ -88,7 +88,7 @@ export class ResponseInterceptorManager extends InterceptorManagerImpl<ResponseI
   /**
    * Execute rejected interceptors
    */
-  async executeRejected(error: import('./types').ApiError): Promise<import('./types').ApiError> {
+  async executeRejected(error: FetchApiError): Promise<FetchApiError> {
     let processedError = error;
     
     for (const interceptor of this.getInterceptors()) {

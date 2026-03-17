@@ -12,7 +12,11 @@ export type {
   ResponseInterceptor,
   InterceptorManager,
   QueryParams,
+  QueryParamValue,
 } from './types';
+
+// Export FetchApiError class (value export, not type-only)
+export { FetchApiError } from './types';
 
 // Export interceptor managers
 export { RequestInterceptorManager, ResponseInterceptorManager } from './interceptors';
@@ -21,5 +25,13 @@ export { RequestInterceptorManager, ResponseInterceptorManager } from './interce
 import { createClient } from './client';
 export const defaultClient = createClient();
 
-// Export methods from default client for direct usage
-export const { get, post, put, delete: del, patch, head, options, request } = defaultClient;
+// Export methods from default client for direct usage.
+// Methods are explicitly bound to preserve correct `this` context.
+export const get = defaultClient.get.bind(defaultClient);
+export const post = defaultClient.post.bind(defaultClient);
+export const put = defaultClient.put.bind(defaultClient);
+export const del = defaultClient.delete.bind(defaultClient);
+export const patch = defaultClient.patch.bind(defaultClient);
+export const head = defaultClient.head.bind(defaultClient);
+export const options = defaultClient.options.bind(defaultClient);
+export const request = defaultClient.request.bind(defaultClient);
