@@ -1,6 +1,6 @@
 {
   "name": "fetch-api-client",
-  "version": "1.0.0",
+  "version": "1.0.5",
   "description": "A TypeScript API client using fetch with axios-like interface",
   "main": "./dist/index.js",
   "module": "./dist/esm/index.js",

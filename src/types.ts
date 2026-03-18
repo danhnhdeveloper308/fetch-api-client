@@ -90,8 +90,8 @@ export class FetchApiError extends Error implements ApiError {
     this.data = apiError.data;
     this.config = apiError.config;
     this.code = apiError.code;
-    if (Error.captureStackTrace) {
-      Error.captureStackTrace(this, FetchApiError);
+    if ((Error as any).captureStackTrace) {
+      (Error as any).captureStackTrace(this, FetchApiError);
     }
   }
 }
